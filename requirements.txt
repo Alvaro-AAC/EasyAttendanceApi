@@ -2,4 +2,4 @@ Django
 cx-Oracle
 djangorestframework
 django-rest-swagger
-dotenv
+python-decouple
