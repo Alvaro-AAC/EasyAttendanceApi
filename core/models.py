@@ -1,9 +1,17 @@
 import datetime
-from django.db import models
+from django.db.utils import IntegrityError
+from django.db import models, transaction
 from django.db.models.signals import pre_save, post_save
 from django.contrib.auth.hashers import make_password, identify_hasher
+import secrets
 
 # Create your models here.
+
+def tokenize():
+    return secrets.token_urlsafe(100)
+
+def exp_date():
+    return datetime.datetime.now() + datetime.timedelta(minutes=20)
 
 class Ramo(models.Model):
     codigo_letra = models.CharField(max_length=3, null=False)
@@ -26,11 +34,11 @@ class Modulo(models.Model):
     hora_fin = models.TimeField(null=False)
 
     def __str__(self):
-        return f'{str(self.hora_ini) - str(self.hora_fin)}'
+        return f'{str(self.hora_ini)} - {str(self.hora_fin)}'
 
 class Seccion(models.Model):
     codigo_seccion = models.IntegerField()
-    tipo = models.CharField(max_length=1, null=False)
+    tipo = models.CharField(max_length=1, null=False, choices=[('D', 'Diurno'), ('V', 'Vespertino')])
     ramo_id = models.ForeignKey(Ramo, null=False, on_delete=models.CASCADE)
 
     class Meta:
@@ -44,6 +52,7 @@ class Seccion(models.Model):
                 name = 'constraint_seccion_codigo'
             )
         ]
+        verbose_name_plural = 'Secciones'
 
     def __str__(self):
         return f'{str(self.ramo_id)}-{self.codigo_seccion}{self.tipo}'
@@ -72,6 +81,8 @@ class Horario_Seccion(models.Model):
                 name = 'horario_seccion_constraint_uk'
             )
         ]
+        verbose_name_plural = 'Horario Secciones'
+        verbose_name = 'horario sección'
 
     def __str__(self):
         return f'{str(self.seccion_id)} | {self.dia} | {str(self.modulo_id)}'
@@ -93,9 +104,19 @@ class Alumno(models.Model):
     def __str__(self):
         return f'{self.nombre} {self.apellido}'
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        del self
+
 class Alumno_Seccion(models.Model):
     seccion_id = models.ForeignKey(Seccion, on_delete=models.CASCADE)
     alumno_id = models.ForeignKey(Alumno, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name_plural = 'Alumnos de sección'
+        verbose_name = 'alumno de sección'
 
     def __str__(self):
         return f'{str(self.seccion_id)} - {str(self.alumno_id)}'
@@ -106,6 +127,9 @@ class Profesor(models.Model):
     contrasena = models.CharField(max_length=2000, null=False)
     nombre = models.CharField(max_length=50, null=False)
     apellido = models.CharField(max_length=50, null=False)
+
+    class Meta:
+        verbose_name_plural = 'Profesores'
 
     def save(self, *args, **kwargs):
         try:
@@ -144,13 +168,40 @@ class Asistencia(models.Model):
 
 class CodigoQR(models.Model):
     codigoqr_id = models.BigAutoField(primary_key=True)
-    url = models.CharField(max_length=1000)
-    fecha_exp = models.DateField(null=True)
+    url = models.CharField(max_length=1000, unique=True, default=tokenize)
+    fecha_exp = models.DateTimeField(default = exp_date)
     clase_id = models.ForeignKey(Clase, on_delete=models.CASCADE)
 
-    def save(self, *args, **kwargs):
-        self.fecha_exp = datetime.datetime.now() + datetime.timedelta(minutes=30)
-        super(CodigoQR, self).save(*args, **kwargs)
+    class Meta:
+        verbose_name_plural = 'Codigos QR'
 
     def __str__(self):
-        return f'{str(self.clase_id)} - {self.fecha_exp.day}/{self.fecha_exp.month} {self.fecha_exp.time}'
+        return f'{str(self.clase_id)} - {self.fecha_exp.day}/{self.fecha_exp.month} {self.fecha_exp.time().strftime("%H:%M:%S")}'
+
+class TokenAlumno(models.Model):
+    tokenAlumno_id = models.BigAutoField(primary_key=True)
+    token = models.CharField(max_length=1000, unique=True, null=True, blank=True, default=tokenize)
+    fecha_exp = models.DateTimeField(default = exp_date)
+    alumno_id = models.ForeignKey(Alumno, on_delete=models.CASCADE)
+
+
+class TokenLogin(models.Model):
+    tokenLogin_id = models.BigAutoField(primary_key=True)
+    usuario = models.CharField(max_length=100, unique=True)
+    token = models.CharField(max_length=1000, unique=True, null=True, blank=True, default=tokenize)
+    fecha_exp = models.DateTimeField(default = exp_date)
+    verificado = models.BooleanField(default=False)
+
+def post_save_clase(sender, instance, created, **kwargs):
+    if created:
+        alumnos = Alumno_Seccion.objects.filter(seccion_id = instance.seccion_id).all()
+        for elem in alumnos:
+            with Alumno.objects.get(pk = elem.pk) as alumno:
+                tempAlumno = Asistencia(clase_id = instance, alumno_id = alumno, presente = False)
+                try:
+                    with transaction.atomic():
+                        tempAlumno.save()
+                except IntegrityError:
+                    ...
+
+post_save.connect(post_save_clase, sender = Clase)

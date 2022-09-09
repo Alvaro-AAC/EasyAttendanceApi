@@ -3,3 +3,4 @@ cx-Oracle
 djangorestframework
 django-rest-swagger
 python-decouple
+django-cors-headers

@@ -1,0 +1,93 @@
+@charset "UTF-8";
+
+body {
+    background-color: #281f6d;
+}
+
+#flexBox {
+    position: absolute;
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    justify-content: center;
+}
+
+#titulo {
+    position: absolute;
+    top: 3%;
+    width: 100%;
+    height: fit-content;
+    text-align: center;
+}
+
+#form {
+    align-self: center;
+    justify-self: center;
+    text-align: left;
+    width: 35%;
+}
+
+#botonContenedor {
+    width: 100%;
+    text-align: center;
+}
+
+#botonPrincipal {
+    font-size: 1.5rem;
+}
+.Cajaclases{
+ position: relative;
+ right: 0;
+ top: 0;
+ display: flex;
+ width: 100%;
+ justify-content: space-between;
+}
+
+#botoncito{
+    position: relative;
+    right: 0;
+    top: 0;
+    justify-self: flex-end;
+    align-self: flex-end;
+}
+.button {
+    margin: 0;
+    background: transparent;
+    padding: 0;
+    border: none;
+  }
+  
+  /* button styling */
+  .button {
+    --border-right: 6px;
+    --text-stroke-color:#8FE3CF;
+    --animation-color: white;
+    --fs-size: 2em;
+    letter-spacing: 3px;
+    text-decoration: none;
+    font-size: var(--fs-size);
+    font-family: "Arial";
+    position: relative;
+    text-transform: uppercase;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--text-stroke-color);
+  }
+  /* this is the text, when you hover on button */
+  .hover-text {
+    position: absolute;
+    box-sizing: border-box;
+    content: attr(data-text);
+    color: var(--animation-color);
+    width: 0%;
+    inset: 0;
+    border-right: var(--border-right) solid var(--animation-color);
+    overflow: hidden;
+    transition: 0.5s;
+    -webkit-text-stroke: 1px var(--animation-color);
+  }
+  /* hover */
+  .button:hover .hover-text {
+    width: 100%;
+    filter: drop-shadow(0 0 23px var(--animation-color))
+  }
