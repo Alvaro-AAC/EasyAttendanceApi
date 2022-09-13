@@ -21,7 +21,7 @@ function getCSRF() {
 }
 
 function back() {
-    // TODO: Volver al login
+    window.location.replace('/logout/');
 }
 
 function abrirModal(e) {
@@ -73,7 +73,7 @@ async function generarQr() {
     tokenClase = generarTokenClase(claseId)
     new QRious({
         element: $('#QrAsistencia')[0],
-        value: `${await tokenClase}`, // Definir token !
+        value: `${await tokenClase}`,
         size: 200,
         foreground: 'black',
         level: 'H'
@@ -102,12 +102,106 @@ async function generarTokenClase(id) {
     });
     return token;
 }
+
 function modalClase() {
     $('#Modalclase').modal('toggle');
 }
+
+function borrarClase() {
+    let swalConfirm = Swal.fire({
+        title: '<strong>¿Desea borrar la clase seleccionada?</strong>',
+        icon: 'question',
+        backdrop: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Aceptar',
+        reverseButtons: true,
+    });
+
+    swalConfirm.then(elem => {
+        if(elem.isConfirmed) {
+            let csrftoken = getCSRF();
+            $.ajax({
+                url: '/api/v1/delclase/',
+                type: 'POST',
+                headers: {"X-CSRFToken": csrftoken},
+                data: `csrftoken=${csrftoken}&id=${claseId}`,
+                success: function(data) {
+                    if(data.status === 'success') {
+                        $('#ramoselect').trigger('change');
+                        $('#AsistenciaModal').modal('hide');
+                    } else {
+                        console.log(data);
+                    }
+                },
+                error : function(data) {
+                    console.log(data);
+                }
+            });
+        } else if(elem.isDismissed) {
+            console.log('dismiss');
+        }
+    });
+}
+
 $(document).ready(function() {
     $('#selectramo').change(function() {
         $('#selectseccion').removeAttr('disabled');
+        $.get(`/api/v1/secciones/${$('#selectramo').val()}/${$('#hiddenprofid').val()}/`)
+        .then(elem => {
+            if(elem.status === 'success') {
+                $('#selectseccion')[0].innerHTML = `<option selected="" disabled="disabled">Secciones</option>`
+                elem.data.forEach(seccion => {
+                    $('#selectseccion')[0].innerHTML += `
+                        <option value="${seccion.pk}">${seccion.codigo_seccion}${seccion.tipo}</option>
+                    `;
+                });
+            }
+        });
+    });
 
+    $('#ramoselect').change(() => {
+        $.get(`/api/v1/clases/${$('#ramoselect').val()}/`)
+        .then(elem => {
+            if(elem.status === 'success') {
+                $('#tablebody')[0].innerHTML = '';
+                elem.data.forEach(clase => {
+                    let letra = clase.seccion_id.ramo_id.codigo_letra;
+                    let num = clase.seccion_id.ramo_id.codigo_numero;
+                    let seccion = clase.seccion_id.codigo_seccion + clase.seccion_id.tipo;
+                    let td1 = `${letra}${num}-${seccion}`;
+                    let td2 = `${clase.fecha}`;
+                    $('#tablebody')[0].innerHTML += `
+                    <tr>
+                        <td>${td1}</td>
+                        <td>${td2}</td>
+                        <td><button class="btn btn-primary" id="${clase.clase_id}" onclick="abrirModal(this)">Ver</button></td>
+                    </tr>
+                    `;
+                });
+            }
+        });
+    });
+
+    $('#formmodal').submit(e => {
+        e.preventDefault();
+        let id = $('#formmodal')[0].selectseccion.value;
+        let form = $('#formmodal').serialize()
+        $.ajax({
+            url: '/crearclase/',
+            type: 'POST',
+            data: form,
+            success: data => {
+                if(data.status === 'success') {
+                    $('#ramoselect').val(id);
+                    $('#ramoselect').trigger('change');
+                    $('#Modalclase').modal('hide');
+                } else {
+                    console.log(data);
+                }
+            }
+        });
     });
 });

@@ -8,7 +8,11 @@ urlpatterns = [
     path('v1/generar_codigo_clase/', codigo_asistencia),
     path('v1/generar_codigo_alumno/', codigo_usuario),
     path('v1/generar_codigo_login/', codigo_login),
-    path('v1/registrarse/<token>/', register),
     path('v1/verified/<user>/', is_verificado),
     path('v1/isalumno/<nombre>/', is_alumno),
+    path('v1/clases/<id>/', clases),
+    path('v1/secciones/<id>/<prof>/', secciones),
+    path('v1/delclase/', delete_clase),
+    path('v1/crearalumno/', crear_alumno),
+    path('v1/login/', login)
 ]

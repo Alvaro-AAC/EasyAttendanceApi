@@ -13,7 +13,7 @@ class SeccionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Seccion
-        fields = ['codigo_seccion', 'tipo', 'ramo_id']
+        fields = ['pk', 'codigo_seccion', 'tipo', 'ramo_id']
 
 class AlumnoSerializer(serializers.ModelSerializer):
 
@@ -44,6 +44,11 @@ class ClaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Clase
         fields = ['clase_id', 'fecha', 'profesor_id', 'seccion_id']
+
+    def to_representation(self, instance):
+        representation = super(ClaseSerializer, self).to_representation(instance)
+        representation['fecha'] = instance.fecha.strftime('%d/%m/%Y')
+        return representation
 
 class AsistenciaSerializer(serializers.ModelSerializer):
 

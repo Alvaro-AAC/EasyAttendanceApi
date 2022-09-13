@@ -37,19 +37,19 @@
                 <table class="table table-striped text-center table-light m-0 mb-5 w-100 mt-2" style="border-collapse: collapse; border-radius: 1em; overflow: hidden; width: 500px;">
                     <thead>
                         <tr>
-                            <td>Ramo y sección</td>
+                            <td>
+                                <select id="ramoselect" class="text-center form-select">
+                                    <option selected="true" disabled="disabled">Seleccione una sección</option>
+                                    {% for elem in secciones %}
+                                    <option value="{{elem.pk}}">{{elem}}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
                             <td>Fecha</td>
                             <td>Asistencia</td>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for elem in clases %}
-                        <tr>
-                            <td>{{elem.seccion_id}}</td>
-                            <td>{{elem.fecha}}</td>
-                            <td><button class="btn btn-primary" id="{{elem.pk}}" onclick="abrirModal(this)">Ver</button></td>
-                        </tr>
-                        {% endfor %}
+                    <tbody id="tablebody">
                     </tbody>
                 </table>
             </div>
@@ -72,6 +72,7 @@
                     
 				</div>
 				<div class="modal-footer">
+                    <button class="btn btn-sm btn-danger" id="btnborrar" onclick="borrarClase()">Borrar clase</button>
 					<button class="btn btn-sm btn-primary" id="btnQR" onclick="generarQr()">Generar QR</button>
 				</div>
 			</div>
@@ -87,28 +88,27 @@
 					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 				</div>
 				<div class="modal-body">
-					<form >
-                        <select class="form-select" aria-label="Default select example" id="selectramo">
-                            <option selected>Asignatura</option>
-                            <option value="1">PGY4121</option>
-                            <option value="2">CSY4121</option>
-                            <option value="3">INU5111</option>
-                          </select>
-                          <br>
-                          <select class="form-select " aria-label="Default select example" id="selectseccion" disabled>
-                            <option selected>Secciones</option>
-                            <option value="1">006D</option>
-                            <option value="2">005D</option>
-                            <option value="3">004D</option>
-                          </select>
+					<form method="POST" id="formmodal">
+                        {% csrf_token %}
+                        <select class="form-select" id="selectramo" name="ramo">
+                            <option selected disabled="disabled">Asignatura</option>
+                            {% for elem in ramos %}
+                            <option value="{{elem.pk}}">{{elem}}</option>
+                            {% endfor %}
+                        </select>
+                        <br>
+                        <select class="form-select " id="selectseccion" disabled name="seccion">
+                            <option selected disabled="disabled">Secciones</option>
+                        </select>
                     </form>
 				</div>
 				<div class="modal-footer">
-					<button class="btn btn-sm btn-primary" data-bs-dismiss="modal">Finalizar</button>
+					<input type="submit" form="formmodal" class="btn btn-sm btn-primary" value="Crear clase"></input>
 				</div>
 			</div>
 		</div>
-	</div> 
+	</div>
+    <input type="hidden" id="hiddenprofid" value="{{prof.pk}}">
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" 
     integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" 
@@ -117,6 +117,7 @@
     integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" 
     crossorigin="anonymous"></script>
 <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="{% static 'js/main.js' %}"></script>
 </body>
 </html>

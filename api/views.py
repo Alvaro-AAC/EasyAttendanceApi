@@ -1,5 +1,4 @@
 import datetime
-from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -10,7 +9,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-import secrets
+from django.contrib.auth.hashers import check_password
 
 
 # Create your views here.
@@ -86,7 +85,7 @@ def codigo_login(request):
         if 'username' in request.POST:
             username = request.POST['username']
             if Alumno.objects.filter(usuario = username).exists():
-                return Response({'status': 'existe'} ,status=status.HTTP_200_OK)
+                return Response({'status': 'existe'}, status=status.HTTP_200_OK)
             else:
                 for elem in username:
                     if not (elem.isalpha() or elem == '.'):
@@ -115,22 +114,6 @@ def codigo_login(request):
         return Response({'status': 'error'}, status=status.HTTP_200_OK)
 
 @api_view(['GET',])
-def register(request, token):
-    if request.method == 'GET':
-        try:
-            vToken = TokenLogin.objects.get(token = token)
-            vToken.verificado = True
-            vToken.save()
-            data = {
-                'verificado': 'Válido'
-            }
-            return Response({'status': 'success', 'data': data}, status=status.HTTP_200_OK)
-        except TokenLogin.DoesNotExist:
-            return Response({'status': 'error'}, status=status.HTTP_200_OK)
-    else:
-        return Response({'status': 'error'}, status=status.HTTP_200_OK)
-
-@api_view(['GET',])
 def is_verificado(request, user):
     if request.method == 'GET':
         try:
@@ -148,7 +131,8 @@ def is_verificado(request, user):
 @api_view(['POST',])
 def crear_alumno(request):
     if request.method == 'POST':
-        ...
+        Alumno(**{key: str(value) for key, value in request.POST.items()}).save()
+        return Response({'status': 'success'}, status=status.HTTP_200_OK)
     else:
         return Response({'status': 'error'}, status=status.HTTP_200_OK)
 
@@ -158,5 +142,70 @@ def is_alumno(request, nombre):
         isAlumn = Alumno.objects.filter(usuario = nombre).exists()
         data = {'existe': isAlumn}
         return Response({'status': 'success', 'data': data}, status=status.HTTP_200_OK)
+    else:
+        return Response({'status': 'error'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'],)
+def clases(request, id):
+    if request.method == 'GET':
+        try:
+            seccion = Seccion.objects.get(pk = id)
+        except Seccion.DoesNotExist:
+            return Response({'status': 'error'}, status=status.HTTP_200_OK)
+        if Clase.objects.filter(seccion_id = seccion).exists():
+            clases = Clase.objects.filter(seccion_id = seccion)
+            serializer = ClaseSerializer(clases, many = True)
+            return Response({'status': 'success', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'status': 'error'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'status': 'error'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'],)
+def secciones(request, id, prof):
+    if request.method == 'GET':
+        try:
+            ramo = Ramo.objects.get(pk = id)
+            profe = Profesor.objects.get(pk = prof)
+        except (Ramo.DoesNotExist, Profesor.DoesNotexist):
+            return Response({'status': 'error'}, status=status.HTTP_200_OK)
+        if Seccion.objects.filter(ramo_id = ramo).exists():
+            secciones = Seccion.objects.filter(ramo_id = ramo, profesor_id = prof)
+            serializer = SeccionSerializer(secciones, many = True)
+            return Response({'status': 'success', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'status': 'error'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'status': 'error'}, status=status.HTTP_200_OK)
+
+@api_view(['POST'],)
+def delete_clase(request):
+    if request.method == 'POST':
+        if Clase.objects.filter(pk = str(request.POST['id'])).exists():
+            clase = Clase.objects.get(pk = str(request.POST['id']))
+            clase.delete()
+            return Response({'status': 'success'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'status': 'error'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'status': 'error'}, status=status.HTTP_200_OK)
+
+@api_view(['POST'],)
+def login(request):
+    if request.method == 'POST':
+        try:
+            pwd = request.POST['pwd']
+            user = request.POST['user']
+        except KeyError:
+            return Response({'status': 'error'}, status=status.HTTP_200_OK)
+        if Alumno.objects.filter(usuario = user).exists():
+            alumno = Alumno.objects.get(usuario = user)
+            valid = check_password(pwd, alumno.contrasena)
+            if valid:
+                return Response({'status': 'success'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'status': 'invalid'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'status': 'invalid'}, status=status.HTTP_200_OK)
     else:
         return Response({'status': 'error'}, status=status.HTTP_200_OK)

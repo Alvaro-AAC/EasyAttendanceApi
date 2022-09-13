@@ -36,10 +36,31 @@ class Modulo(models.Model):
     def __str__(self):
         return f'{str(self.hora_ini)} - {str(self.hora_fin)}'
 
+class Profesor(models.Model):
+    profesor_id = models.BigAutoField(primary_key=True)
+    usuario = models.CharField(max_length=100, null=False, unique=True)
+    contrasena = models.CharField(max_length=2000, null=False)
+    nombre = models.CharField(max_length=50, null=False)
+    apellido = models.CharField(max_length=50, null=False)
+
+    class Meta:
+        verbose_name_plural = 'Profesores'
+
+    def save(self, *args, **kwargs):
+        try:
+            identify_hasher(self.contrasena)
+        except ValueError:
+            self.contrasena = make_password(self.contrasena)
+        super(Profesor, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.nombre} {self.apellido}'
+
 class Seccion(models.Model):
     codigo_seccion = models.IntegerField()
     tipo = models.CharField(max_length=1, null=False, choices=[('D', 'Diurno'), ('V', 'Vespertino')])
     ramo_id = models.ForeignKey(Ramo, null=False, on_delete=models.CASCADE)
+    profesor_id = models.ForeignKey(Profesor, null=False, blank= False, on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
@@ -121,30 +142,9 @@ class Alumno_Seccion(models.Model):
     def __str__(self):
         return f'{str(self.seccion_id)} - {str(self.alumno_id)}'
 
-class Profesor(models.Model):
-    profesor_id = models.BigAutoField(primary_key=True)
-    usuario = models.CharField(max_length=100, null=False, unique=True)
-    contrasena = models.CharField(max_length=2000, null=False)
-    nombre = models.CharField(max_length=50, null=False)
-    apellido = models.CharField(max_length=50, null=False)
-
-    class Meta:
-        verbose_name_plural = 'Profesores'
-
-    def save(self, *args, **kwargs):
-        try:
-            identify_hasher(self.contrasena)
-        except ValueError:
-            self.contrasena = make_password(self.contrasena)
-        super(Profesor, self).save(*args, **kwargs)
-
-    def __str__(self):
-        return f'{self.nombre} {self.apellido}'
-
 class Clase(models.Model):
     clase_id = models.BigAutoField(primary_key=True)
     fecha = models.DateField(null=False)
-    profesor_id = models.ForeignKey(Profesor, on_delete=models.CASCADE)
     seccion_id = models.ForeignKey(Seccion, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -196,7 +196,7 @@ def post_save_clase(sender, instance, created, **kwargs):
     if created:
         alumnos = Alumno_Seccion.objects.filter(seccion_id = instance.seccion_id).all()
         for elem in alumnos:
-            with Alumno.objects.get(pk = elem.pk) as alumno:
+            with Alumno.objects.get(pk = elem.alumno_id.pk) as alumno:
                 tempAlumno = Asistencia(clase_id = instance, alumno_id = alumno, presente = False)
                 try:
                     with transaction.atomic():

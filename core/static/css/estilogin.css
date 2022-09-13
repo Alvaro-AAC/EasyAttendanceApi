@@ -33,9 +33,9 @@ button {
     border-radius: 6px;
     font-weight: 500;
     color: var(--color);
-   }
+}
    
-   button:before {
+button:before {
     content: "";
     position: absolute;
     z-index: -1;
@@ -43,24 +43,46 @@ button {
     height: 150px;
     width: 200px;
     border-radius: 50%;
-   }
-   
-   button:hover {
+}
+
+button:hover {
     color: #fff;
-   }
-   
-   button:before {
+}
+
+button:before {
     top: 100%;
     left: 100%;
     transition: all .7s;
-   }
-   
-   button:hover:before {
+}
+
+button:hover:before {
     top: -30px;
     left: -30px;
-   }
-   
-   button:active:before {
+}
+
+button:active:before {
     background: #3a0ca3;
     transition: background 0s;
-   }
+}
+
+
+*::selection {
+    color: white;
+    background: lightgreen;
+}
+
+.forminput {
+    transition: .25s border ease-in-out;
+    border-radius: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent;
+    color: white;
+    border: 0;
+    border-bottom: 2px solid white;
+    font-size: 20px;
+}
+  
+.forminput:focus {
+    border-bottom-color: lightgreen;
+}
