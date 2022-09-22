@@ -66,3 +66,18 @@ class CodigoQrSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodigoQR
         fields = ['codigoqr_id', 'url', 'fecha_exp', 'clase_id']
+
+class ModuloSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Modulo
+        fields = '__all__'
+
+class HorarioSeccionSerializer(serializers.ModelSerializer):
+
+    modulo_id = ModuloSerializer(read_only = True)
+    seccion_id = SeccionSerializer(read_only = True)
+
+    class Meta:
+        model = Horario_Seccion
+        fields = ['dia', 'modulo_id', 'seccion_id']

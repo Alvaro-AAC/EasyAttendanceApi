@@ -1,15 +1,15 @@
 import datetime
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from core.models import *
-from .serializers import *
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.contrib.auth.hashers import check_password
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from core.models import *
+from .serializers import *
 
 
 # Create your views here.
@@ -62,9 +62,14 @@ def codigo_asistencia(request):
 @api_view(['POST',])
 def codigo_usuario(request):
     if request.method == 'POST':
-        id = request.POST['id'][0]
-        username = request.POST['username'][0]
-        code = TokenAlumno(alumno_id = Alumno.objects.get(usuario = username, pk = id))
+        try:
+            username = request.POST['username']
+        except:
+            return Response({'status': 'error'}, status=status.HTTP_200_OK)
+        alumno = Alumno.objects.get(usuario = username)
+        if TokenAlumno.objects.filter(alumno_id = alumno).exists():
+            TokenAlumno.objects.get(alumno_id = alumno).delete()
+        code = TokenAlumno(alumno_id = alumno)
         code.save()
         data = {
             'token': code.token
@@ -91,19 +96,19 @@ def codigo_login(request):
                     if not (elem.isalpha() or elem == '.'):
                         return Response({'status': 'errorvalidacion'}, status=status.HTTP_200_OK)
                     else:
-                        if TokenLogin.objects.filter(usuario = username).exists():
-                            ... #TokenLogin.objects.get(usuario = username).delete()
+                        if TokenLogin.objects.filter(usuario = username).exists() and username != 'a':
+                            TokenLogin.objects.get(usuario = username).delete()
                         token = TokenLogin(usuario = username)
         else:
             return Response({'status': 'error'}, status=status.HTTP_200_OK)
-        # token.save()
+        token.save()
         subject = 'Registrarse en Easy Attendance'
         html_message = render_to_string('mail_template.html', {'token': token.token})
         plain_message = strip_tags(html_message)
         email_from = settings.EMAIL_HOST_USER
         recipient_list = [f'{username}@duocuc.cl']
 
-        # send_mail(subject, plain_message, email_from, recipient_list, html_message=html_message )
+        #send_mail(subject, plain_message, email_from, recipient_list, html_message=html_message )
 
         data = {
             'token': token.token
@@ -170,7 +175,7 @@ def secciones(request, id, prof):
         except (Ramo.DoesNotExist, Profesor.DoesNotexist):
             return Response({'status': 'error'}, status=status.HTTP_200_OK)
         if Seccion.objects.filter(ramo_id = ramo).exists():
-            secciones = Seccion.objects.filter(ramo_id = ramo, profesor_id = prof)
+            secciones = Seccion.objects.filter(ramo_id = ramo, profesor_id = profe)
             serializer = SeccionSerializer(secciones, many = True)
             return Response({'status': 'success', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
@@ -207,5 +212,22 @@ def login(request):
                 return Response({'status': 'invalid'}, status=status.HTTP_200_OK)
         else:
             return Response({'status': 'invalid'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'status': 'error'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'],)
+def horario(request, token):
+    if request.method == 'GET':
+        try:
+            usuario = TokenAlumno.objects.get(token = token).alumno_id
+            seccionesAlumno = Alumno_Seccion.objects.filter(alumno_id = usuario).all()
+            secciones = []
+            for seccion in seccionesAlumno:
+                secciones.append(seccion.seccion_id)
+            serializer = HorarioSeccionSerializer(Horario_Seccion.objects.filter(seccion_id__in = secciones).order_by('modulo_id__hora_ini').all(), many=True).data
+            print(serializer)
+            return Response(serializer, status=status.HTTP_200_OK)
+        except TokenAlumno.DoesNotExist:
+            return Response({'status': 'error', 'data': 'No existe'}, status=status.HTTP_200_OK)
     else:
         return Response({'status': 'error'}, status=status.HTTP_200_OK)
