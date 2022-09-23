@@ -1,5 +1,8 @@
 var input;
 var claseId;
+var intervalo;
+var lastOpen;
+var timer = 300;
 
 function getCSRF() {
     var cookies_array = document.cookie.split(';');
@@ -24,12 +27,18 @@ function back() {
     window.location.replace('/logout/');
 }
 
-function abrirModal(e) {
-    var qrDom = $('#QrAsistencia')[0]; 
-    qrDom.src = '';
-    qrDom.height = 0;
-    qrDom.width = 0;
-    $('#AsistenciaModal').modal('toggle');
+function abrirModal(e, toggle) {
+    var qrDom = $('#QrAsistencia')[0];
+    lastOpen = e;
+    if(toggle) {
+        $('#timer').html(``);
+        timer = 300;
+        clearInterval(intervalo);
+        qrDom.src = '';
+        qrDom.height = 0;
+        qrDom.width = 0;
+        $('#AsistenciaModal').modal('toggle');
+    }
     claseId = e.id;
     $.get(`/api/v1/lista_asistencia/${claseId}/?format=json`, data => {
         var presente;
@@ -68,6 +77,10 @@ function reloadPage() {
     window.location.reload();
 }
 
+function refresh() {
+
+}
+
 async function generarQr() {
     var tokenClase;
     tokenClase = generarTokenClase(claseId)
@@ -78,6 +91,25 @@ async function generarQr() {
         foreground: 'black',
         level: 'H'
     });
+    $('#timer').html(`Tiempo: 5:00`);
+    intervalo = setInterval(function() {
+        abrirModal(lastOpen, false);
+        timer -= 1;
+        if(timer%60<10) {
+            $('#timer').html(`Tiempo: ${Math.floor(timer/60)}:0${timer%60}`);
+        } else {
+            $('#timer').html(`Tiempo: ${Math.floor(timer/60)}:${timer%60}`);
+        }
+        
+        if(timer <= 0) {
+            var qrDom = $('#QrAsistencia')[0];
+            $('#timer').html(``);
+            clearInterval(intervalo);
+            qrDom.src = '';
+            qrDom.height = 0;
+            qrDom.width = 0;
+        }
+    }, 1000);
 }
 
 async function generarTokenClase(id) {
@@ -177,7 +209,7 @@ $(document).ready(function() {
                     <tr>
                         <td>${td1}</td>
                         <td>${td2}</td>
-                        <td><button class="btn btn-primary" id="${clase.clase_id}" onclick="abrirModal(this)">Ver</button></td>
+                        <td><button class="btn btn-primary" id="${clase.clase_id}" onclick="abrirModal(this, true)">Ver</button></td>
                     </tr>
                     `;
                 });
@@ -210,5 +242,9 @@ $(document).ready(function() {
                 }
             }
         });
+    });
+
+    $('#AsistenciaModal').on('hidden.bs.modal', () => {
+        clearInterval(intervalo);
     });
 });
