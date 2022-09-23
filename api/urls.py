@@ -15,5 +15,6 @@ urlpatterns = [
     path('v1/delclase/', delete_clase),
     path('v1/crearalumno/', crear_alumno),
     path('v1/login/', login),
-    path('v1/horario/<token>/', horario)
+    path('v1/horario/<token>/', horario),
+    path('v1/asistencia/<token>/', calcularAsistencia)
 ]

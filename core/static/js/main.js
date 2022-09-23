@@ -181,6 +181,13 @@ $(document).ready(function() {
                     </tr>
                     `;
                 });
+            } else if(elem.status === 'no data') {
+                Swal.fire({
+                    title: '<strong>No se han creado clases para la sección seleccionada</strong>',
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar',
+                });
+                $('#tablebody')[0].innerHTML = '';
             }
         });
     });
