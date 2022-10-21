@@ -5,6 +5,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.contrib.auth.hashers import check_password
+from django.db.models import  Count
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -265,6 +266,39 @@ def calcularAsistencia(request, token):
                 value['total'] = total
             return Response(serializer, status=status.HTTP_200_OK)
         except TokenAlumno.DoesNotExist:
+            return Response({'status': 'error', 'data': 'No existe'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'status': 'error'}, status=status.HTTP_200_OK)
+
+@api_view(['GET'],)
+def traerAsistencia(request, id):
+    if request.method == 'GET':
+        try:
+            seccion = Seccion.objects.get(pk = id)
+            clases = Clase.objects.filter(seccion_id = seccion).all()
+            asistencias = Asistencia.objects.filter(clase_id__in = clases)
+
+            serializer = {}
+            for asistencia in asistencias:
+                if asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido not in serializer:
+                    serializer[asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido]={}
+                try:
+                    serializer[asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido]['total'] +=1
+                except Exception as e:
+                    print(e.__class__)
+                    serializer[asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido]['total'] =1
+                if asistencia.presente:
+                    try:
+                        serializer[asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido]['asistidas'] += 1
+                    except:
+                        serializer[asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido]['asistidas'] = 1
+                else:
+                    try:
+                        serializer[asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido]['asistidas'] += 0
+                    except:
+                        serializer[asistencia.alumno_id.nombre+' '+ asistencia.alumno_id.apellido]['asistidas'] = 0
+            return Response(serializer, status=status.HTTP_200_OK)
+        except Seccion.DoesNotExist:
             return Response({'status': 'error', 'data': 'No existe'}, status=status.HTTP_200_OK)
     else:
         return Response({'status': 'error'}, status=status.HTTP_200_OK)

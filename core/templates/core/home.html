@@ -29,9 +29,14 @@
                         <h6 class="d-inline" style="color: white;">Profesor/a: </h6><p class="d-inline" style="color: white;">{{prof.nombre}} {{prof.apellido}}</p> <p class="d-inline"></p>
                     </div>
 
-                    <button data-text="Crearclase" class="button" id="botoncito" onclick="modalClase()">
-                        <span class="actual-text">&nbsp;Crear&nbsp;clase&nbsp;</span>
-                        <span class="hover-text" aria-hidden="true">&nbsp;Crear&nbsp;clase&nbsp;</span>
+                    <button onclick="modalAsistencia()"class="icon-btn add-btn">
+                        <div class="add-icon"></div>
+                        <div class="btn-txt">ver asistencia</div>
+                    </button>
+
+                    <button onclick="modalClase()" class="icon-btn add-btn">
+                        <div class="add-icon"></div>
+                        <div class="btn-txt">Crear clase</div>
                     </button>
                 </div>
                 <table class="table table-striped text-center table-light m-0 mb-5 w-100 mt-2" style="border-collapse: collapse; border-radius: 1em; overflow: hidden; width: 500px;">
@@ -56,7 +61,7 @@
         </div>
     </div>
 
-
+   <!-- Modal QR -->
     <div class="modal fade" id="AsistenciaModal" tabindex="-1" aria-labelledby="AsistenciaModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">
@@ -80,7 +85,45 @@
 		</div>
                 
 	</div>
+    <!-- Modal Asistencia -->
+    <div class="modal fade" id="Modalasistencia" tabindex="-1" aria-labelledby="AsistenciaModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-tittle" id="AsistenciaModalLabel">Asistencia clase</h4>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body" id="bodyModal">
+                    <select id="asistenciaSelect" class="text-center form-select">
+                        <option selected="true" disabled="disabled">Seleccione una sección</option>
+                        {% for elem in secciones %}
+                        <option value="{{elem.pk}}">{{elem}}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="ContenidoA">
+                        <table class="table table-striped text-center table-light m-0 mb-5 w-100 mt-2" style="border-collapse: collapse; border-radius: 1em; overflow: hidden; width: 500px;">
+                            <thead>
+                                <tr>
+                                    <td>Nombre Alumno</td>
+                                    <td>Clases asistidas</td>
+                                    <td>Clases totales</td>
+                                </tr>
+                            </thead>
+                            <tbody id="tableasist">
+                                
+                            </tbody>
+                        </table>
+                    </div>
 
+				</div>
+				<div class="modal-footer">
+                   
+				</div>
+			</div>
+		</div>
+                
+	</div>
+<!--Crear CLase-->
     <div class="modal fade" id="Modalclase" tabindex="-1" aria-labelledby="ModalclaseLabel" aria-hidden="true">
 		<div class="modal-dialog modal-dialog-centered">
 			<div class="modal-content">

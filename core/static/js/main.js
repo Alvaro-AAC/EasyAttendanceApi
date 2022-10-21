@@ -138,6 +138,9 @@ async function generarTokenClase(id) {
 function modalClase() {
     $('#Modalclase').modal('toggle');
 }
+function modalAsistencia() {
+    $('#Modalasistencia').modal('toggle');
+}
 
 function borrarClase() {
     let swalConfirm = Swal.fire({
@@ -246,5 +249,23 @@ $(document).ready(function() {
 
     $('#AsistenciaModal').on('hidden.bs.modal', () => {
         clearInterval(intervalo);
+    });
+    $('#asistenciaSelect').change(function(elem){
+        let asistenciaHtml = '';
+        
+        $.get(`/api/v1/asistenciatotal/${$('#asistenciaSelect').val( )}`).then(e=>{
+            for(let [key, value] of Object.entries(e)){
+                asistenciaHtml += `
+                    <tr>
+                        <td>${key}</td>
+                        <td>${value['asistidas']}</td>
+                        <td>${value['total']}</td>    
+                    </tr>
+                    `;
+            }
+            $('#tableasist')[0].innerHTML = asistenciaHtml;
+        });
+        
+        
     });
 });
